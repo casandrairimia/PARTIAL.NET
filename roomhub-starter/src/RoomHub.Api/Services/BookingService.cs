@@ -1,61 +1,38 @@
 using RoomHub.Api.Models;
+using RoomHub.Api.Models.Common;
 using RoomHub.Api.Repositories;
 
 namespace RoomHub.Api.Services;
 
-public class BookingService(RoomRepository rooms, BookingRepository bookings)
+public class BookingService(RoomRepository rooms, BookingRepository bookings, TimeProvider timeProvider)
 {
-    public Booking Create(Guid roomId, string? bookedBy, DateTime startUtc, DateTime endUtc, int attendees)
+    public Result<Booking> Create(Guid roomId, string? bookedBy, DateTime startUtc, DateTime endUtc, int attendees)
     {
         var room = rooms.Get(roomId);
         if (room is null)
-            throw new BusinessException("RoomNotFound", "The room does not exist.", 404);
+            return Result<Booking>.Failure(Error.NotFound("RoomNotFound", "The room does not exist."));
 
-        if (string.IsNullOrWhiteSpace(bookedBy))
-            throw new BusinessException("InvalidBookedBy", "BookedBy is required.", 400);
-
-        if (endUtc <= startUtc)
-            throw new BusinessException("InvalidRange", "The end must be after the start.", 400);
-
-        if (attendees <= 0)
-            throw new BusinessException("InvalidAttendees", "Attendees must be positive.", 400);
-
-        if (attendees > room.Capacity)
-            throw new BusinessException("AttendeesExceedCapacity", "The room does not have enough seats.", 400);
-
-        foreach (var existing in bookings.ListForRoom(roomId))
-        {
-            if (existing.StartUtc <= endUtc && startUtc <= existing.EndUtc)
-                throw new BusinessException("RoomOccupied", "The room is occupied in this interval.", 409);
-        }
-
-        var booking = new Booking
-        {
-            Id = Guid.NewGuid(),
-            RoomId = roomId,
-            BookedBy = bookedBy.Trim(),
-            StartUtc = startUtc,
-            EndUtc = endUtc,
-            Attendees = attendees,
-            Status = BookingStatus.Active
-        };
-
-        bookings.Add(booking);
-        return booking;
+        var result = Booking.Create(
+            room, bookedBy, startUtc, endUtc, attendees,
+            bookings.ListForRoom(roomId), timeProvider.GetUtcNow().UtcDateTime);
+        if (!result.IsSuccess) return result;
+        bookings.Add(result.Value!);
+        return result;
     }
 
-    public Booking Get(Guid id)
+    public Result<Booking> Get(Guid id)
     {
         var booking = bookings.Get(id);
         if (booking is null)
-            throw new BusinessException("BookingNotFound", "The booking does not exist.", 404);
+            return Result<Booking>.Failure(Error.NotFound("BookingNotFound", "The booking does not exist."));
 
-        return booking;
+        return Result<Booking>.Success(booking);
     }
 
-    public void Cancel(Guid id)
+    public Result<bool> Cancel(Guid id)
     {
-        var booking = Get(id);
-        booking.Status = BookingStatus.Cancelled;
+        var result = Get(id);
+        if (!result.IsSuccess) return Result<bool>.Failure(result.Error!);
+        return result.Value!.Cancel();
     }
 }

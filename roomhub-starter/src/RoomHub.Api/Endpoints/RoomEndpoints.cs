@@ -18,7 +18,10 @@ public static class RoomEndpoints
 
         group.MapPost("/", (CreateRoomRequest request, RoomService service) =>
         {
-            var room = service.Create(request.Name, request.Capacity);
+            var result = service.Create(request.Name, request.Capacity);
+            if (!result.IsSuccess)
+                return result.Error.ToProblem();
+            var room = result.Value!;
             return Results.Created(
                 $"/api/rooms/{room.Id}",
                 new RoomResponse(room.Id, room.Name, room.Capacity));
@@ -26,14 +29,20 @@ public static class RoomEndpoints
 
         group.MapGet("/{id:guid}", (Guid id, RoomService service) =>
         {
-            var room = service.Get(id);
+            var result = service.Get(id);
+            if (!result.IsSuccess)
+                return result.Error.ToProblem();
+            var room = result.Value!;
             return Results.Ok(new RoomResponse(room.Id, room.Name, room.Capacity));
         });
 
         group.MapPost("/{roomId:guid}/bookings", (Guid roomId, CreateBookingRequest request, BookingService service) =>
         {
-            var booking = service.Create(
+            var result = service.Create(
                 roomId, request.BookedBy, request.StartUtc, request.EndUtc, request.Attendees);
+            if (!result.IsSuccess)
+                return result.Error.ToProblem();
+            var booking = result.Value!;
 
             return Results.Created(
                 $"/api/bookings/{booking.Id}",

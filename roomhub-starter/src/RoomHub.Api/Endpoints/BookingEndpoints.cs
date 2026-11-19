@@ -19,14 +19,19 @@ public static class BookingEndpoints
 
         group.MapGet("/{id:guid}", (Guid id, BookingService service) =>
         {
-            var b = service.Get(id);
+            var result = service.Get(id);
+            if (!result.IsSuccess)
+                return result.Error.ToProblem();
+            var b = result.Value!;
             return Results.Ok(new BookingResponse(
                 b.Id, b.RoomId, b.BookedBy, b.StartUtc, b.EndUtc, b.Attendees, b.Status.ToString()));
         });
 
         group.MapPost("/{id:guid}/cancel", (Guid id, BookingService service) =>
         {
-            service.Cancel(id);
+            var result = service.Cancel(id);
+            if (!result.IsSuccess)
+                return result.Error.ToProblem();
             return Results.NoContent();
         });
     }
