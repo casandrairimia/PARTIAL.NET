@@ -36,8 +36,14 @@ public class Booking
         if (startUtc < nowUtc)
             return Result<Booking>.Failure(Error.Validation("BookingStartsInPast", "A booking cannot start in the past."));
 
-        if (endUtc - startUtc > TimeSpan.FromHours(4))
-            return Result<Booking>.Failure(Error.Validation("BookingTooLong", "A booking cannot exceed 4 hours."));
+        var maximumDuration = room.Capacity > 10
+            ? TimeSpan.FromHours(2)
+            : TimeSpan.FromHours(4);
+
+        if (endUtc - startUtc > maximumDuration)
+            return Result<Booking>.Failure(Error.Validation(
+                "BookingTooLong",
+                $"A booking in this room cannot exceed {maximumDuration.TotalHours} hours."));
 
         if (attendees <= 0)
             return Result<Booking>.Failure(Error.Validation("InvalidAttendees", "Attendees must be positive."));

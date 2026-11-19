@@ -7,13 +7,12 @@ An unanswered question gives 0 points.
 ## 1. A rule you moved
 Pick one business rule (R1–R8). In which file did it live in the starter and in which file does it live now? Why there?
 
-_(your answer here)_
+**R1.** A room has a non-empty name and a strictly positive capacity. This validation should have been made in the domain class because multiple services can go through the same validation of the room
 
 ## 2. Result instead of an exception
 Why is `Result` a better choice than an exception for "the room is occupied"? What happens in your code when an `Error` is returned?
 
-_(your answer here)_
-
+We don t want the program to stop, we want the user to pe informed why a certain action can't be performed instead of stopping the program(Error)
 ## 3. Who knows about EF Core?
 Which classes in your project know about EF Core and which do not? What do you gain and what do you pay with Repository + Unit of Work?
 
