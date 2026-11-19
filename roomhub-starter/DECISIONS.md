@@ -16,19 +16,39 @@ We don t want the program to stop, we want the user to pe informed why a certain
 ## 3. Who knows about EF Core?
 Which classes in your project know about EF Core and which do not? What do you gain and what do you pay with Repository + Unit of Work?
 
-_(your answer here)_
+Interfetele repositoryurilor (IBookingRepository , IRoomRepository), DbContext, fisirele din persistence
+cost : mai multe interfet
+benefit : accesul la date e separat. 
 
 ## 4. The flow of a request
 Draw in text (ASCII arrows) the path of a `POST /api/rooms/{roomId}/bookings` request through your project, with the **real** names of files and classes, from the endpoint to the database.
 
-_(your answer here)_
+POST /api/rooms/{roomId}/bookings
+→ CreateBookingEndpoint.MapCreateBooking
+→ CreateBookingRequest
+→ CreateBookingCommand
+→ CreateBookingHandler.Handle
+→ IRoomRepository.Get
+→ EfRoomRepository.Get
+→ RoomHubDbContext.Rooms
+→ SQLite: reads the room
+→ IBookingRepository.ListForRoom
+→ EfBookingRepository.ListForRoom
+→ RoomHubDbContext.Bookings
+→ SQLite: 
+→ Booking.Create
+→ IBookingRepository.Add
+→ EfBookingRepository.Add
+→ IUnitOfWork.SaveChanges
+→ EfUnitOfWork.SaveChanges
+→ RoomHubDbContext.SaveChanges
+→ SQLite
 
 ## 5. What you rejected from what the AI gave you
 Give a concrete example of code or an idea proposed by the AI that you corrected or rejected, and say why.
 
-_(your answer here)_
+I rejected the addition of code in the service file, this will no longer be necessary
 
 ## 6. If you had 30 more minutes
 What would you improve and what risk did you leave in the project?
-
-_(your answer here)_
+ adaugarea testelor de integrare
